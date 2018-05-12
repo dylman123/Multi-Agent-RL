@@ -23,8 +23,9 @@ class World:
         self.wall_punishment = 1
         self.walk_punishment = 0.04
         self.goal_reward = 5  # To give if all agents collaborate
+        self.goal_count = 0  # To track how many goals have been reached (in episodic mode only)
         self.crash_punishment = 10  # To punish if any agents crash
-        self.width, self.height, self.walls, self.goals, self.starts = World.make_geometry(self, map_type)
+        self.width, self.height, self.walls, self.goals, self.starts, self.map_mode = World.create_map(self, map_type)
         self.coords_type = coords_type  # To toggle between relative and absolute coordinates
 
         # Create a board to render to
@@ -58,11 +59,7 @@ class World:
         self.time_step = 0  # To count each step
 
         # Create an initial random state
-        for agent in self.agent_list:
-            World.spawn(self, agent)  # Spawn all agents randomly
-            World.new_goal(self, agent)
-            World.update_intent(self, agent)
-        World.update_global_state(self)
+        World.reset_all_agents(self)
 
         # Create objects for rendering agents
         self.colours = ["orange", "blue", "pink", "purple", "yellow"]
@@ -82,6 +79,10 @@ class World:
     # Start rendering the 'master' object
     def start_game(self):
         self.master.mainloop()
+
+    def reset_all_agents(self):
+        for agent in self.agent_list:
+            World.reset(self, agent)
 
     def reset(self, agent):
         World.spawn(self, agent)
@@ -168,8 +169,11 @@ class World:
 
                 # Check for a collision of agents
                 if World.has_collided(self, agent) is True:
-                    World.punish(self, agent)
-                    World.reset(self, agent)
+                    agent.reward = -self.crash_punishment
+                    if self.map_mode == "episodic":
+                        World.reset_all_agents(self)
+                    elif self.map_mode == "non-episodic":
+                        World.reset(self, agent)
                     self.collisions += 1
                     self.episode_count += 1
                     self.restart = True
@@ -177,13 +181,18 @@ class World:
                     # Check for landing on a goal
                     for ((x, y), g_id) in self.goals:
                         if agent.position == (x, y) and agent.goal == g_id:
-                            World.reward(self, agent)
+                            agent.reward = self.goal_reward
+                            if self.map_mode == "episodic":
+                                World.reset(self, agent)
+                            elif self.map_mode == "non-episodic":
+                                World.new_goal(self, agent)  # Find a new goal for the agent
+                                World.update_intent(self, agent)
                             self.episode_count += 1
                             self.restart = True
 
             # If the cell is not valid, it must belong to a wall our reside outside the world boundaries
             else:
-                World.punish(self, agent)
+                agent.reward = -self.crash_punishment
 
             # Reformat state from global to local (per agent)
             agent.state2 = World.reformat_state(self, agent, self.coords_type)
@@ -196,18 +205,8 @@ class World:
 
         return self.global_state, self.rewards, self.restart, self.episode_info
 
-    # Execute code to reward the agent for reaching a goal
-    def reward(self, agent):
-        agent.reward = self.goal_reward
-        World.new_goal(self, agent)  # Find a new goal for the agent
-        World.update_intent(self, agent)
-
-    # Execute code to punish the agent for colliding with an agent or wall
-    def punish(self, agent):
-        agent.reward = -self.crash_punishment
-
     # Create the geometry of the desired map type
-    def make_geometry(self, map_type):
+    def create_map(self, map_type):
         """
             *** DEFINING THE WALL CELLS OF THE WORLD ***
                 'walls' is defined as a list with entries in the following syntax:
@@ -247,14 +246,17 @@ class World:
 
             starts = [(2, 4), (0, 2), (2, 0), (4, 2)]
 
+            map_mode = "non-episodic"
+
         else:
             width = 0
             height = 0
             walls = []
             goals = []
             starts = []
+            map_mode = ""
 
-        return width, height, walls, goals, starts
+        return width, height, walls, goals, starts, map_mode
 
     # Create instances of agents and save in a global agent list
     def make_agents(self, agent_type):
@@ -298,7 +300,6 @@ class World:
 
     # Spawn an agent in a vacant starting cell
     def spawn(self, agent):
-
         vacant_array = [1] * len(self.starts)
         for start in range(len(self.starts)):
             for Agent in self.agent_list:
@@ -310,7 +311,6 @@ class World:
 
     # Create a global state by appending all agents states
     def update_global_state(self):
-
         self.global_state = []
         for Agent in self.agent_list:
             self.global_state.append(Agent.position[0])
