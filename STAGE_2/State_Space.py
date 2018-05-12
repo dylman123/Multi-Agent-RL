@@ -10,16 +10,11 @@ def make_states(n, x, y):
     if n == 1:
         for a in range(-x+1, x):
             for b in range(-y+1, y):
-                state_space.append((a, b))
-
-    elif n == 2:
-        for a in range(-x+1, x):
-            for b in range(-y+1, y):
                 for c in range(-x+1, x):
                     for d in range(-y+1, y):
                         state_space.append((a, b, c, d))
 
-    elif n == 3:
+    elif n == 2:
         for a in range(-x + 1, x):
             for b in range(-y + 1, y):
                 for c in range(-x + 1, x):
@@ -28,7 +23,7 @@ def make_states(n, x, y):
                             for f in range(-y + 1, y):
                                 state_space.append((a, b, c, d, e, f))
 
-    elif n == 4:
+    elif n == 3:
         for a in range(-x + 1, x):
             for b in range(-y + 1, y):
                 for c in range(-x + 1, x):
@@ -39,7 +34,7 @@ def make_states(n, x, y):
                                     for h in range(-y + 1, y):
                                         state_space.append((a, b, c, d, e, f, g, h))
 
-    elif n == 5:
+    elif n == 4:
         for a in range(-x + 1, x):
             for b in range(-y + 1, y):
                 for c in range(-x + 1, x):

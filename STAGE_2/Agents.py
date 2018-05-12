@@ -1,11 +1,11 @@
 __author__ = 'Dylan Klein'
 '''This file defines the class for creating agents who learn to navigate and negotiate in a multi-agent environment'''
 
-from STAGE_2.Naming_Convention import integer_to_letter as int2let
+from Naming_Convention import integer_to_letter as int2let
 from random import *
 import copy
 import pickle
-import tensorflow as tf
+# import tensorflow as tf
 
 
 class Q_Table:
@@ -14,8 +14,8 @@ class Q_Table:
 
         self.agent_id = agent_id  # Numerical ID for each agent
         self.discount = discount  # Discount factor
-        self.alpha = 1  # The agent's learning rate
-        self.epsilon = 1  # Initial value of agent's epsilon
+        self.alpha = 0.1  # The agent's learning rate
+        self.epsilon = 0.1  # Initial value of agent's epsilon
         self.epsilon_decay = epsilon_decay  # How much epsilon decays per step
         self.Q = copy.deepcopy(q)  # The Q-table of the agent
         self.actions = actions  # Input the environment's action space
@@ -56,7 +56,7 @@ class Q_Table:
             self.action = max_act
 
     # Learn from the new state and reward pair as updated by the environment
-    def learn(self, time):
+    def learn(self, time, restart):
 
         # Update Q
         max_act, max_val = Q_Table.max_Q(self, self.state2)
@@ -65,8 +65,8 @@ class Q_Table:
         # Update the learning rate
         self.alpha = pow(time, -0.1)
 
-        # Decay epsilon value
-        if self.epsilon > 0.01:
+        # Decay epsilon value at the end of each episode
+        if restart is True and self.epsilon > 0.01:
             self.epsilon *= self.epsilon_decay
 
     # Find the maximum Q-value and action pair for a given state

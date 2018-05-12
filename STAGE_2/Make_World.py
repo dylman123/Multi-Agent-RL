@@ -1,13 +1,14 @@
 __author__ = 'Dylan Klein'
 '''This file defines the class for creating grid world environments as an object'''
 
-from STAGE_2.State_Space import make_states
-from STAGE_2.Agents import *
+from State_Space import make_states
+from Agents import *
 from tkinter import *  # For rendering
 from random import randint, choice
 import numpy as np
 
 # import matplotlib.pyplot as plt
+
 
 class World:
 
@@ -126,6 +127,7 @@ class World:
         self.rewards = [0] * self.num_agents  # Reset the rewards list to zero
         self.restart = False
         copy_agent_list = list(self.agent_list)
+        coords_type = "absolute"  # Toggle between relative and absolute coordinates
 
         for _ in range(self.num_agents):
             agent = choice(copy_agent_list)  # Choose a random agent from the list
@@ -134,8 +136,8 @@ class World:
             # Initialise the agent's reward for the step
             agent.reward = 0
 
-            # Convert state from absolute coordinates to relative coordinates
-            agent.state = World.reformat_state(self, agent)
+            # Reformat state from global to local (per agent)
+            agent.state = World.reformat_state(self, agent, coords_type)
 
             # Agent to choose an action for the step
             agent.act()
@@ -183,11 +185,11 @@ class World:
             else:
                 World.punish(self, agent)
 
-            # Convert state from absolute coordinates to relative coordinates
-            agent.state2 = World.reformat_state(self, agent)
+            # Reformat state from global to local (per agent)
+            agent.state2 = World.reformat_state(self, agent, coords_type)
 
             # Agent to learn from the new state and reward pair
-            agent.learn(self.time_step)
+            agent.learn(self.time_step, self.restart)
 
             # Output a list of rewards for the step
             self.rewards[agent.agent_id] = agent.reward
@@ -346,27 +348,28 @@ class World:
 
         agent.goal = random_new_goal
 
-    # Reformat the global state to a relative state for an individual agent
-    def reformat_state(self, agent):
-        relative_state = list(self.global_state)
+    # Reformat the global state for an individual agent
+    def reformat_state(self, agent, coords_type):
 
-        # Subtract an agent's own position from the global state
+        reformatted_state = list(self.global_state)
         (px, py) = agent.position
-        relative_state[::2] = np.array(relative_state[::2]) - px
-        relative_state[1::2] = np.array(relative_state[1::2]) - py
-
-        # Remove the zero entries (an agent's origin)
-        i = agent.agent_id
-        del relative_state[2*i]
-        del relative_state[2*i]
 
         # Encode relative goal of the agent
         for ((gx, gy), g_id) in self.goals:
             if agent.goal == g_id:
-                relative_state.append(gx - px)
-                relative_state.append(gy - py)
+                reformatted_state.append(gx)
+                reformatted_state.append(gy)
 
-        return tuple(relative_state)
+        if coords_type is "relative":
+
+            # Subtract an agent's own position from the global state
+            reformatted_state[::2] = np.array(reformatted_state[::2]) - px
+            reformatted_state[1::2] = np.array(reformatted_state[1::2]) - py
+
+        elif coords_type is "absolute":
+            pass
+
+        return tuple(reformatted_state)
 
     # Updates an agent's intent info (in words)
     def update_intent(self, agent):
@@ -386,7 +389,7 @@ class World:
         for agent in self.agent_list:
             agent.save()
 
-    # Testing mode only
-    def test(self):
+    # In testing mode only
+    def epsilon_greedy(self):
         for Agent in self.agent_list:
             Agent.epsilon = 0
