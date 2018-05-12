@@ -12,7 +12,7 @@ import numpy as np
 
 class World:
 
-    def __init__(self, map_type, num_agents, agent_type, load, save):
+    def __init__(self, map_type, coords_type, num_agents, agent_type, load, save):
 
         # File saving
         self.load = load  # If load has value "yes", read each agent's Q-table from a file for initialisation
@@ -25,6 +25,7 @@ class World:
         self.goal_reward = 5  # To give if all agents collaborate
         self.crash_punishment = 10  # To punish if any agents crash
         self.width, self.height, self.walls, self.goals, self.starts = World.make_geometry(self, map_type)
+        self.coords_type = coords_type  # To toggle between relative and absolute coordinates
 
         # Create a board to render to
         self.master = Tk()
@@ -127,7 +128,6 @@ class World:
         self.rewards = [0] * self.num_agents  # Reset the rewards list to zero
         self.restart = False
         copy_agent_list = list(self.agent_list)
-        coords_type = "absolute"  # Toggle between relative and absolute coordinates
 
         for _ in range(self.num_agents):
             agent = choice(copy_agent_list)  # Choose a random agent from the list
@@ -137,7 +137,7 @@ class World:
             agent.reward = 0
 
             # Reformat state from global to local (per agent)
-            agent.state = World.reformat_state(self, agent, coords_type)
+            agent.state = World.reformat_state(self, agent, self.coords_type)
 
             # Agent to choose an action for the step
             agent.act()
@@ -186,7 +186,7 @@ class World:
                 World.punish(self, agent)
 
             # Reformat state from global to local (per agent)
-            agent.state2 = World.reformat_state(self, agent, coords_type)
+            agent.state2 = World.reformat_state(self, agent, self.coords_type)
 
             # Agent to learn from the new state and reward pair
             agent.learn(self.time_step, self.restart)
