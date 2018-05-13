@@ -12,7 +12,7 @@ import numpy as np
 
 class World:
 
-    def __init__(self, map_type, coords_type, num_agents, agent_type, load, save):
+    def __init__(self, map_type, num_agents, agent_type, load, save):
 
         # File saving
         self.load = load  # If load has value "yes", read each agent's Q-table from a file for initialisation
@@ -26,7 +26,6 @@ class World:
         self.goal_count = 0  # To track how many goals have been reached (in episodic mode only)
         self.crash_punishment = 10  # To punish if any agents crash
         self.width, self.height, self.walls, self.goals, self.starts, self.map_mode = World.create_map(self, map_type)
-        self.coords_type = coords_type  # To toggle between relative and absolute coordinates
 
         # Create a board to render to
         self.master = Tk()
@@ -45,7 +44,7 @@ class World:
 
         # Multi-agent variables
         self.num_agents = num_agents
-        self.states = make_states(self.num_agents, self.width, self.height)  # Create the entire state space
+        self.states = make_states(self.num_agents, len(self.goals), self.width, self.height)  # Create the entire state space
         self.num_states = len(self.states)
         self.agent_list = World.make_agents(self, agent_type)  # To create instances of agents
         self.collisions = 0  # To count how many collisions have occurred in each episode
@@ -64,7 +63,7 @@ class World:
         # Create objects for rendering agents
         self.colours = ["orange", "blue", "pink", "purple", "yellow"]
         self.names = ["A", "B", "C", "D", "E"]
-        self.triangle_size = 0.2
+        self.triangle_size = 0.1
         for agent in self.agent_list:
             (x, y) = agent.position
             agent.object = self.board.create_rectangle(x * self.L + self.L * 2 / 10,
@@ -74,7 +73,8 @@ class World:
                                                        fill=self.colours[agent.agent_id],
                                                        width=1, tag=self.names[agent.agent_id])
 
-            agent.arrow = self.board.create_polygon(0, 0, fill="black", width=1)
+            for i in range(len(self.goals)):
+                agent.arrow[i] = self.board.create_polygon(0, 0, fill=self.colours[agent.agent_id], width=1)
 
     # Start rendering the 'master' object
     def start_game(self):
@@ -86,8 +86,7 @@ class World:
 
     def reset(self, agent):
         World.spawn(self, agent)
-        World.new_goal(self, agent)
-        World.update_intent(self, agent)
+        agent.goal = World.new_goal(self, agent)
         World.update_global_state(self)  # Update the global state
 
     def render(self):
@@ -101,28 +100,41 @@ class World:
             World.update_arrow(self, agent)
 
     def update_arrow(self, agent):
+
+        # Reset all arrows
+        for i in range(len(agent.arrow)):
+            self.board.coords(agent.arrow[i], 0, 0)
+
+        # Set the relevant arrows
+        for i in range(len(agent.goal)):
+            if agent.goal[i] == 1:
+                World.draw_arrow(self, agent, i)
+            else:
+                self.board.coords(agent.arrow[i], 0, 0)
+
+    def draw_arrow(self, agent, direction):
         (x, y) = agent.position
-        nudge = self.triangle_size / 2
-        if agent.intent == "S":
-            (self.board.coords(agent.arrow,
-                               (x + 0.5 - self.triangle_size) * self.L, (y + 0.5 - nudge) * self.L,
-                               (x + 0.5 + self.triangle_size) * self.L, (y + 0.5 - nudge) * self.L,
-                               (x + 0.5) * self.L, (y + 0.5 + self.triangle_size - nudge) * self.L))
-        elif agent.intent == "W":
-            (self.board.coords(agent.arrow,
-                               (x + 0.5 + nudge) * self.L, (y + 0.5 - self.triangle_size) * self.L,
-                               (x + 0.5 + nudge) * self.L, (y + 0.5 + self.triangle_size) * self.L,
-                               (x + 0.5 + nudge - self.triangle_size) * self.L, (y + 0.5) * self.L))
-        elif agent.intent == "N":
-            (self.board.coords(agent.arrow,
-                               (x + 0.5 - self.triangle_size) * self.L, (y + 0.5 + nudge) * self.L,
-                               (x + 0.5 + self.triangle_size) * self.L, (y + 0.5 + nudge) * self.L,
-                               (x + 0.5) * self.L, (y + 0.5 - self.triangle_size + nudge) * self.L))
-        elif agent.intent == "E":
-            (self.board.coords(agent.arrow,
-                               (x + 0.5 - nudge) * self.L, (y + 0.5 - self.triangle_size) * self.L,
-                               (x + 0.5 - nudge) * self.L, (y + 0.5 + self.triangle_size) * self.L,
-                               (x + 0.5 - nudge + self.triangle_size) * self.L, (y + 0.5) * self.L))
+
+        if direction == 0:  # DOWN
+            (self.board.coords(agent.arrow[direction],
+                               (x + 0.5 - self.triangle_size) * self.L, (y + 1 - self.triangle_size) * self.L,
+                               (x + 0.5 + self.triangle_size) * self.L, (y + 1 - self.triangle_size) * self.L,
+                               (x + 0.5) * self.L, (y + 1) * self.L))
+        elif direction == 1:  # LEFT
+            (self.board.coords(agent.arrow[direction],
+                               (x + self.triangle_size) * self.L, (y + 0.5 - self.triangle_size) * self.L,
+                               (x + self.triangle_size) * self.L, (y + 0.5 + self.triangle_size) * self.L,
+                               x * self.L, (y + 0.5) * self.L))
+        elif direction == 2:  # UP
+            (self.board.coords(agent.arrow[direction],
+                               (x + 0.5 - self.triangle_size) * self.L, (y + self.triangle_size) * self.L,
+                               (x + 0.5 + self.triangle_size) * self.L, (y + self.triangle_size) * self.L,
+                               (x + 0.5) * self.L, y * self.L))
+        elif direction == 3:  # RIGHT
+            (self.board.coords(agent.arrow[direction],
+                               (x + 1 - self.triangle_size) * self.L, (y + 0.5 - self.triangle_size) * self.L,
+                               (x + 1 - self.triangle_size) * self.L, (y + 0.5 + self.triangle_size) * self.L,
+                               (x + 1) * self.L, (y + 0.5) * self.L))
 
     def step(self):
         self.time_step += 1
@@ -138,7 +150,7 @@ class World:
             agent.reward = 0
 
             # Reformat state from global to local (per agent)
-            agent.state = World.reformat_state(self, agent, self.coords_type)
+            agent.state = World.reformat_state(self, agent)
 
             # Agent to choose an action for the step
             agent.act()
@@ -180,13 +192,12 @@ class World:
                 else:
                     # Check for landing on a goal
                     for ((x, y), g_id) in self.goals:
-                        if agent.position == (x, y) and agent.goal == g_id:
+                        if agent.position == (x, y) and World.has_reached_goal(self, agent, g_id) is True:
                             agent.reward = self.goal_reward
                             if self.map_mode == "episodic":
                                 World.reset(self, agent)
                             elif self.map_mode == "non-episodic":
-                                World.new_goal(self, agent)  # Find a new goal for the agent
-                                World.update_intent(self, agent)
+                                agent.goal = World.new_goal(self, agent)  # Find a new goal for the agent
                             self.episode_count += 1
                             self.restart = True
 
@@ -195,7 +206,7 @@ class World:
                 agent.reward = -self.crash_punishment
 
             # Reformat state from global to local (per agent)
-            agent.state2 = World.reformat_state(self, agent, self.coords_type)
+            agent.state2 = World.reformat_state(self, agent)
 
             # Agent to learn from the new state and reward pair
             agent.learn(self.time_step, self.restart)
@@ -331,58 +342,53 @@ class World:
                 return True
         return False
 
+    # Check to see if the agent has landed on a goal cell that it intended to land on
+    def has_reached_goal(self, agent, g_id):
+
+        # This function compares the following two lists
+        listA = list(agent.goal)
+        listB = list(g_id)
+
+        # Check if both lists share a goal (logic 1)
+        for i in range(len(listA)):
+            if listA[i] == 1 and listB[i] == 1:
+                return True
+        return False
+
     # Once a goal is reached, pick a new goal for the agent
     def new_goal(self, agent):
-        random_new_goal = (0, 0, 0, 0)
+        random_new_goal = list(agent.goal)
 
-        # Delete the current goal from a COPY of self.goals
-        copy_goals = list(self.goals)
-        for ((x, y), g_id) in copy_goals:
-            if agent.goal == g_id:
-                copy_goals.remove(((x, y), g_id))
+        # Make sure the new goal does not include the previous goal (1 -> -1 to indicate an invalid choice)
+        for i in range(len(random_new_goal)):
+            if random_new_goal[i] == 1:
+                random_new_goal[i] = -1
 
-        (x, y) = agent.position
-        while (x, y) == agent.position:
-            n = randint(0, len(copy_goals) - 1)  # The next random goal is chosen here
-            ((x, y), random_new_goal) = copy_goals[n]
+        # Set new goals in a random manner (0 -> 1 or 0 -> 0)
+        for i in range(len(random_new_goal)):
+            if random_new_goal[i] == 0 and randint(0, 1) == 1:
+                random_new_goal[i] = 1
 
-        agent.goal = random_new_goal
+        # Set the -1 value back to a 0
+        for i in range(len(random_new_goal)):
+            if random_new_goal[i] == -1:
+                random_new_goal[i] = 0
+
+        # Make sure the agent can never reach the [0, 0, 0, 0] list, so recursively try again if it happens
+        if random_new_goal == [0, 0, 0, 0]:
+            random_new_goal = World.new_goal(self, agent)
+
+        return tuple(random_new_goal)
 
     # Reformat the global state for an individual agent
-    def reformat_state(self, agent, coords_type):
+    def reformat_state(self, agent):
 
         reformatted_state = list(self.global_state)
-        (px, py) = agent.position
 
         # Encode relative goal of the agent
-        for ((gx, gy), g_id) in self.goals:
-            if agent.goal == g_id:
-                reformatted_state.append(gx)
-                reformatted_state.append(gy)
-
-        if coords_type is "relative":
-
-            # Subtract an agent's own position from the global state
-            reformatted_state[::2] = np.array(reformatted_state[::2]) - px
-            reformatted_state[1::2] = np.array(reformatted_state[1::2]) - py
-
-        elif coords_type is "absolute":
-            pass
+        reformatted_state += list(agent.goal)
 
         return tuple(reformatted_state)
-
-    # Updates an agent's intent info (in words)
-    def update_intent(self, agent):
-        if agent.goal == (1, 0, 0, 0):
-            agent.intent = "S"
-        elif agent.goal == (0, 1, 0, 0):
-            agent.intent = "W"
-        elif agent.goal == (0, 0, 1, 0):
-            agent.intent = "N"
-        elif agent.goal == (0, 0, 0, 1):
-            agent.intent = "E"
-        else:
-            agent.intent = "None"
 
     # Save agents' Q-tables or Neural Networks to file
     def write_to_file(self):

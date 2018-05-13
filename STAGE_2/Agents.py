@@ -26,6 +26,7 @@ class Q_Table:
         self.reward = 0  # An agent's reward per step
         self.state = []  # An agent's previous state
         self.state2 = []  # An agent's new state
+        self.arrow = {}
 
         # The initial Q-table of the agent is to be loaded from file if input is not {}
         if self.Q == "load":
