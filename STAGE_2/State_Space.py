@@ -15,7 +15,7 @@ Another example may be (0, 4, 1, 1, 0, 0, 0, 1) which is interpreted as: Agent A
 Agent B is located at (1, 1). Agent A's individual goal in one-hot encoding is 0001. This means that Agent A
 can only be rewarded by landing on the fourth goal cell.
 
-Both of these state eoncoding examples are for ONE INDIVIDUAL AGENT only.
+Both of these state encoding examples are for ONE INDIVIDUAL AGENT only.
 '''
 
 

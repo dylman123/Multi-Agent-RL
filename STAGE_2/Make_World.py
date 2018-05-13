@@ -5,7 +5,6 @@ from State_Space import make_states
 from Agents import *
 from tkinter import *  # For rendering
 from random import randint, choice
-import numpy as np
 
 # import matplotlib.pyplot as plt
 
@@ -289,7 +288,7 @@ class World:
                     Q[state] = temp  # Initialise Q table
 
             for i in range(self.num_agents):
-                agent = Q_Table(agent_id=i, discount=0.3, epsilon_decay=0.9, actions=self.actions, q=Q)
+                agent = Q_Table(agent_id=i, discount=0.3, epsilon_decay=0.5, actions=self.actions, q=Q)
                 agent_list.append(agent)
 
         elif agent_type is "DQN":
