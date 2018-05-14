@@ -272,35 +272,29 @@ class World:
     def make_agents(self, agent_type):
 
         agent_list = []
+        if self.load is "yes":
+            Q = "load"
+        else:
+            Q = "new"
 
         if agent_type is "Q_Table":
-
-            if self.load is "yes":
-                Q = "load"
-
-            else:
-                # Create a new Q-table, with all Q-values initialised to 0.1
-                Q = {}
-                for state in self.states:
-                    temp = {}
-                    for action in self.actions:
-                        temp[action] = 0.1
-                    Q[state] = temp  # Initialise Q table
-
             for i in range(self.num_agents):
-                agent = Q_Table(agent_id=i, discount=0.3, epsilon_decay=0.5, actions=self.actions, q=Q)
+                agent = Q_Table(agent_id=i,
+                                discount=0.9,
+                                epsilon_decay=0.5,
+                                states=self.states,
+                                actions=self.actions,
+                                q=Q)
                 agent_list.append(agent)
 
         elif agent_type is "DQN":
-
-            if self.load is "yes":
-                Q = "load"
-
-            else:
-                Q = "new"
-
             for i in range(self.num_agents):
-                agent = DQN(agent_id=i, discount=0.3, epsilon_decay=0.9, actions=self.actions, num_states=self.num_states, q=Q)
+                agent = DQN(agent_id=i,
+                            discount=0.9,
+                            epsilon_decay=0.5,
+                            states=self.states,
+                            actions=self.actions,
+                            q=Q)
                 agent_list.append(agent)
 
         elif False:  # Insert future learning methods here

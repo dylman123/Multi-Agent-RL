@@ -17,7 +17,7 @@ import time
     - save="no": does not save agents' neural networks to file, save="yes": saves neural networks to file
 '''
 
-env = World(map_type="plus", num_agents=1, agent_type="Q_Table", load="no", save="yes")
+env = World(map_type="plus", num_agents=3, agent_type="Q_Table", load="no", save="yes")
 
 
 # Save agents' Q-tables or Neural Networks to file
@@ -51,8 +51,8 @@ def start_training():
             cumulative_rewards = np.array(cumulative_rewards) + np.array(rewards)
 
             # Print the agents' average reward per episode
-            if done is True and ep % 100 is 0:
-                print(ep, list(cumulative_rewards / ep))
+            if done is True and ep % 10000 is 0:
+                print(ep, cumulative_rewards / ep)
 
     # A keyboard interrupt will exit training mode
     except KeyboardInterrupt:

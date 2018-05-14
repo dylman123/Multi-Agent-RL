@@ -10,7 +10,7 @@ import pickle
 
 class Q_Table:
 
-    def __init__(self, agent_id, discount, epsilon_decay, actions, q):
+    def __init__(self, agent_id, discount, epsilon_decay, states, actions, q):
 
         self.agent_id = agent_id  # Numerical ID for each agent
         self.discount = discount  # Discount factor
@@ -24,18 +24,30 @@ class Q_Table:
         self.intent = "none"  # An agent's intended goal in words
         self.position = (0, 0)  # An agent's coordinates
         self.reward = 0  # An agent's reward per step
+        self.states = states  # The entire state space of the game
         self.state = []  # An agent's previous state
         self.state2 = []  # An agent's new state
-        self.arrow = {}
+        self.arrow = {}  # Object to store the agent's intent arrows
 
-        # The initial Q-table of the agent is to be loaded from file if input is not {}
+        # The initial Q-table can be either loaded from file or created from scratch
         if self.Q == "load":
             Q_Table.load(self)
+        elif self.Q == "new":
+            Q_Table.new(self)
 
     # Load Q-table from file
     def load(self):
         with open('Saved_Files/' + 'agent' + int2let(self.agent_id+1) + '_saved' + '.pkl', 'rb') as f:
             self.Q = pickle.load(f)
+
+    # Create a new Q-table, with all Q-values initialised to 0.1
+    def new(self):
+        self.Q = {}
+        for state in self.states:
+            temp = {}
+            for action in self.actions:
+                temp[action] = 0.1
+            self.Q[state] = temp  # Initialise Q table
 
     # Save Q-table to file
     def save(self):
@@ -94,7 +106,7 @@ class Q_Table:
 
 class DQN:
 
-    def __init__(self, agent_id, discount, epsilon_decay, actions, num_states, q):
+    def __init__(self, agent_id, discount, epsilon_decay, states, actions, q):
 
         self.agent_id = agent_id  # Numerical ID for each agent
         self.discount = discount  # Discount factor
