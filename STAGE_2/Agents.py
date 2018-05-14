@@ -15,7 +15,7 @@ class Q_Table:
         self.agent_id = agent_id  # Numerical ID for each agent
         self.discount = discount  # Discount factor
         self.alpha = 0.1  # The agent's learning rate
-        self.epsilon = 0.1  # Initial value of agent's epsilon
+        self.epsilon = 1  # Initial value of agent's epsilon
         self.epsilon_decay = epsilon_decay  # How much epsilon decays per step
         self.Q = copy.deepcopy(q)  # The Q-table of the agent
         self.actions = actions  # Input the environment's action space
@@ -59,9 +59,20 @@ class Q_Table:
     # Learn from the new state and reward pair as updated by the environment
     def learn(self, time, restart):
 
-        # Update Q
-        max_act, max_val = Q_Table.max_Q(self, self.state2)
-        Q_Table.inc_Q(self, self.state, self.action, self.alpha, self.reward + self.discount * max_val)
+        # Use shorthand notation for readability
+        s = self.state
+        s2 = self.state2
+        a = self.action
+        r = self.reward
+        y = self.discount
+        lr = self.alpha
+        Q = self.Q
+
+        # Find the maximum value for the new state
+        max_act, max_val = Q_Table.max_Q(self, s2)
+
+        # Update Q-Table using the Bellman Equation
+        self.Q[s][a] = Q[s][a] + lr * (r + y * max_val - Q[s][a])
 
         # Update the learning rate
         self.alpha = pow(time, -0.1)
@@ -79,11 +90,6 @@ class Q_Table:
                 val = q
                 act = a
         return act, val
-
-    # Update the Q-value based on the learning rate
-    def inc_Q(self, s, a, alpha, inc):
-        self.Q[s][a] *= 1 - alpha
-        self.Q[s][a] += alpha * inc
 
 
 class DQN:
