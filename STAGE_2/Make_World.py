@@ -45,7 +45,7 @@ class World:
 
         # Multi-agent variables
         self.num_agents = num_agents
-        self.states = make_states(self.num_agents, len(self.goals), self.width, self.height)  # Create the entire state space
+        self.states = make_states(self.num_agents, self.coords_type, len(self.goals), self.width, self.height)  # Create the entire state space
         self.num_states = len(self.states)
         self.agent_list = World.make_agents(self, agent_type)  # To create instances of agents
         self.collisions = 0  # To count how many collisions have occurred in each episode
