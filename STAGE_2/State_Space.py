@@ -16,6 +16,12 @@ Agent B is located at (1, 1). Agent A's individual goal in one-hot encoding is 0
 can only be rewarded by landing on the fourth goal cell.
 
 Both of these state encoding examples are for ONE INDIVIDUAL AGENT only.
+
+If relative coords is selected, then an example state might be (0, 0, -2, -2, 1, 0, 0, 1) which means: Agent A has
+no concept of where it is located but it knows that it itself is located at its own origin (0, 0). It also knows
+that Agent B is located 2 cells up and 2 cells left from itself due to the relative coordinates of Agent B (-2, -2)
+from Agent A's origin. Like in the other examples, its possible goals are the first and fourth due to the
+one-hot encoding 1001.
 '''
 
 
@@ -26,38 +32,38 @@ def make_states(num_agents, num_goals, x, y):
     goal_table = list(itertools.product([0, 1], repeat=num_goals))  # Goal possibilities in one-hot encoding
 
     if num_agents == 1:
-        for a in range(x):
-            for b in range(y):
+        for a in range(-x + 1, x):
+            for b in range(-y + 1, y):
                 for goal in goal_table:
                     state_space.append(tuple([a, b] + list(goal)))
 
     elif num_agents == 2:
-        for a in range(x):
-            for b in range(y):
-                for c in range(x):
-                    for d in range(y):
+        for a in range(-x + 1, x):
+            for b in range(-y + 1, y):
+                for c in range(-x + 1, x):
+                    for d in range(-y + 1, y):
                         for goal in goal_table:
                             state_space.append(tuple([a, b, c, d] + list(goal)))
 
     elif num_agents == 3:
-        for a in range(x):
-            for b in range(y):
-                for c in range(x):
-                    for d in range(y):
-                        for e in range(x):
-                            for f in range(y):
+        for a in range(-x + 1, x):
+            for b in range(-y + 1, y):
+                for c in range(-x + 1, x):
+                    for d in range(-y + 1, y):
+                        for e in range(-x + 1, x):
+                            for f in range(-y + 1, y):
                                 for goal in goal_table:
                                     state_space.append(tuple([a, b, c, d, e, f] + list(goal)))
 
     elif num_agents == 4:
-        for a in range(x):
-            for b in range(y):
-                for c in range(x):
-                    for d in range(y):
-                        for e in range(x):
-                            for f in range(y):
-                                for g in range(x):
-                                    for h in range(y):
+        for a in range(-x + 1, x):
+            for b in range(-y + 1, y):
+                for c in range(-x + 1, x):
+                    for d in range(-y + 1, y):
+                        for e in range(-x + 1, x):
+                            for f in range(-y + 1, y):
+                                for g in range(-x + 1, x):
+                                    for h in range(-y + 1, y):
                                         for goal in goal_table:
                                             state_space.append(tuple([a, b, c, d, e, f, g, h] + list(goal)))
 
