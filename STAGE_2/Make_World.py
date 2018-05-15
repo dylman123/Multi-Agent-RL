@@ -5,14 +5,13 @@ from State_Space import make_states
 from Agents import *
 from tkinter import *  # For rendering
 from random import randint, choice
-import numpy as np
 
 # import matplotlib.pyplot as plt
 
 
 class World:
 
-    def __init__(self, map_type, num_agents, agent_type, coords_type, load, save):
+    def __init__(self, map_type, num_agents, agent_type, load, save):
 
         # File saving
         self.load = load  # If load has value "yes", read each agent's Q-table from a file for initialisation
@@ -26,7 +25,6 @@ class World:
         self.goal_count = 0  # To track how many goals have been reached (in episodic mode only)
         self.crash_punishment = 10  # To punish if any agents crash
         self.width, self.height, self.walls, self.goals, self.starts, self.map_mode = World.create_map(self, map_type)
-        self.coords_type = coords_type  # Absolute or relative coordinates as seen by agents
 
         # Create a board to render to
         self.master = Tk()
@@ -379,14 +377,6 @@ class World:
     def reformat_state(self, agent):
 
         reformatted_state = list(self.global_state)
-
-        # Convert to relative coordinates
-        if self.coords_type is "relative":
-
-            # Subtract an agent's own position from the global state
-            (px, py) = agent.position
-            reformatted_state[::2] = np.array(reformatted_state[::2]) - px
-            reformatted_state[1::2] = np.array(reformatted_state[1::2]) - py
 
         # Encode relative goal of the agent
         reformatted_state += list(agent.goal)
