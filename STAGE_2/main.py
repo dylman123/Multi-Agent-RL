@@ -17,7 +17,7 @@ import time
     - save="no": does not save agents' neural networks to file, save="yes": saves neural networks to file
 '''
 
-env = World(map_type="plus", num_agents=3, agent_type="Q_Table", coords_type="absolute", load="no", save="yes")
+env = World(map_type="plus", num_agents=1, agent_type="Q_Table", coords_type="absolute", load="no", save="yes")
 
 
 # Save agents' Q-tables or Neural Networks to file

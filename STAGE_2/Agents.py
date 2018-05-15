@@ -5,8 +5,15 @@ from Naming_Convention import integer_to_letter as int2let
 from random import *
 import copy
 import pickle
+import os
 # import tensorflow as tf
+import datetime
+import time
 
+
+# For time stamping directories when agents Q-functions are saved
+def timeStamped(fname, fmt='%Y-%m-%d-%H-%M-%S_{fname}'):
+    return datetime.datetime.now().strftime(fmt).format(fname=fname)
 
 class Q_Table:
 
@@ -51,7 +58,9 @@ class Q_Table:
 
     # Save Q-table to file
     def save(self):
-        with open('Saved_Files/' + 'agent' + int2let(self.agent_id+1) + '_saved' + '.pkl', 'wb') as f:
+        stamp = timeStamped("")
+        os.makedirs('Saved_Files/' + stamp)
+        with open('Saved_Files/' + stamp + '/agent' + int2let(self.agent_id+1) + '_saved' + '.pkl', 'wb') as f:
             pickle.dump(self.Q, f, pickle.HIGHEST_PROTOCOL)
 
     # Decide on the best action to take (with the exception of a random action now and again)
