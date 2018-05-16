@@ -18,7 +18,7 @@ import time
 '''
 
 env = World(map_type="plus", num_agents=3, agent_type="Q_Table", coords_type="absolute", load="no", save="no")
-print(len(env.states))
+
 
 # Save agents' Q-tables or Neural Networks to file
 def save_agents():
@@ -52,7 +52,7 @@ def start_training():
 
             # Print the agents' average reward per episode
             if done is True and ep % 100 is 0:
-                pass  #print(ep, cumulative_rewards / ep)
+                print(ep, cumulative_rewards / ep)
 
     # A keyboard interrupt will exit training mode
     except KeyboardInterrupt:
