@@ -47,7 +47,8 @@ class World:
         self.num_agents = num_agents
         self.states = make_states(self.num_agents, self.coords_type, len(self.goals), self.width, self.height)  # Create the entire state space
         self.num_states = len(self.states)
-        self.agent_list = World.make_agents(self, agent_type)  # To create instances of agents
+        self.agent_type = agent_type
+        self.agent_list = World.make_agents(self, self.agent_type)  # To create instances of agents
         self.collisions = 0  # To count how many collisions have occurred in each episode
 
         # RL variables
@@ -251,10 +252,10 @@ class World:
                      (0, 3), (1, 3),     (3, 3), (4, 3),
                      (0, 4), (1, 4),     (3, 4), (4, 4)]
 
-            goals = [((4, 2), (0, 0, 0, 1)),
-                     ((2, 0), (0, 0, 1, 0)),
+            goals = [((2, 4), (1, 0, 0, 0)),
                      ((0, 2), (0, 1, 0, 0)),
-                     ((2, 4), (1, 0, 0, 0))]
+                     ((2, 0), (0, 0, 1, 0)),
+                     ((4, 2), (0, 0, 0, 1))]
 
             starts = [(2, 4), (0, 2), (2, 0), (4, 2)]
 
@@ -352,6 +353,12 @@ class World:
 
     # Once a goal is reached, pick a new goal for the agent
     def new_goal(self, agent):
+
+        # If previous goal is [1, 1, 1, 1] invert all bits to remove recursion errors
+        if agent.goal == (1, 1, 1, 1):
+            agent.goal = (0, 0, 0, 0)
+
+        # Copy the agent's goal into a modifiable list
         random_new_goal = list(agent.goal)
 
         # Make sure the new goal does not include the previous goal (1 -> -1 to indicate an invalid choice)
@@ -382,6 +389,12 @@ class World:
 
         # Convert to relative coordinates
         if self.coords_type is "relative":
+
+            if self.agent_type is not "Q_Table":
+                # Encode relative positions of the agent's goals
+                for ((x, y), g_id) in self.goals:
+                    reformatted_state.append(x)
+                    reformatted_state.append(y)
 
             # Subtract an agent's own position from the global state
             (px, py) = agent.position

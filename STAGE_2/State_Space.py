@@ -17,11 +17,20 @@ can only be rewarded by landing on the fourth goal cell.
 
 Both of these state encoding examples are for ONE INDIVIDUAL AGENT only.
 
+In a 2-agent game:
 If relative coords is selected, then an example state might be (0, 0, -2, -2, 1, 0, 0, 1) which means: Agent A has
 no concept of where it is located but it knows that it itself is located at its own origin (0, 0). It also knows
 that Agent B is located 2 cells up and 2 cells left from itself due to the relative coordinates of Agent B (-2, -2)
 from Agent A's origin. Like in the other examples, its possible goals are the first and fourth due to the
 one-hot encoding 1001.
+
+If Q_Table is not selected as the learning algorithm, the state space can be much larger since it does not need
+to be explicitly defined. Therefore if neural networks are used instead of a Q_Table, then the relative state space
+format will be:
+(0, 0, relative coordinates of other agents, relative coordinates of all the possible goals, one-hot coding of 
+desired goals), for example:
+
+(0, 0, -2, 3, 4, 0, 1, -1, 2, 2, -1, 1, 0, 0, 1, 0) is a 2-agent world with 4 goals and one-hot coding 0010.
 '''
 
 
