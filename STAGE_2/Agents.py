@@ -15,6 +15,7 @@ import time
 def timeStamped(fname, fmt='%Y-%m-%d-%H-%M-%S_{fname}'):
     return datetime.datetime.now().strftime(fmt).format(fname=fname)
 
+
 class Q_Table:
 
     def __init__(self, agent_id, discount, epsilon_decay, states, actions, q):
@@ -121,7 +122,7 @@ class DQN:
         self.discount = discount  # Discount factor
         self.epsilon_decay = epsilon_decay  # How much epsilon decays per step
         self.actions = actions  # Input the environment's action space
-        self.num_states = num_states  # Input the size of the environment's state space
+        self.states = states  # Input the size of the environment's state space
 
         # These lines establish the feed-forward part of the network used to choose actions
         num_actions = len(self.actions)
