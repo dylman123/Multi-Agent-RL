@@ -41,78 +41,47 @@ def make_states(num_agents, coords_type, num_goals, x, y):
     goal_table = list(itertools.product([0, 1], repeat=num_goals))  # Goal possibilities in one-hot encoding
 
     if coords_type == "relative":
+        x_range = range(-x + 1, x)
+        y_range = range(-y + 1, y)
 
-        if num_agents == 1:
-            for a in range(-x + 1, x):
-                for b in range(-y + 1, y):
+    else:  # if coords_type == "absolute":
+        x_range = range(x)
+        y_range = range(y)
+
+    # Create a large state space using FOR loop iterations
+    if num_agents == 1:
+        for a in x_range:
+            for b in y_range:
                     for goal in goal_table:
                         state_space.append(tuple([a, b] + list(goal)))
 
-        elif num_agents == 2:
-            for a in range(-x + 1, x):
-                for b in range(-y + 1, y):
-                    for c in range(-x + 1, x):
-                        for d in range(-y + 1, y):
+    elif num_agents == 2:
+        for a in x_range:
+            for b in y_range:
+                for c in x_range:
+                    for d in y_range:
                             for goal in goal_table:
                                 state_space.append(tuple([a, b, c, d] + list(goal)))
 
-        elif num_agents == 3:
-            for a in range(-x + 1, x):
-                for b in range(-y + 1, y):
-                    for c in range(-x + 1, x):
-                        for d in range(-y + 1, y):
-                            for e in range(-x + 1, x):
-                                for f in range(-y + 1, y):
+    elif num_agents == 3:
+        for a in x_range:
+            for b in y_range:
+                for c in x_range:
+                    for d in y_range:
+                        for e in x_range:
+                            for f in y_range:
                                     for goal in goal_table:
                                         state_space.append(tuple([a, b, c, d, e, f] + list(goal)))
 
-        elif num_agents == 4:
-            for a in range(-x + 1, x):
-                for b in range(-y + 1, y):
-                    for c in range(-x + 1, x):
-                        for d in range(-y + 1, y):
-                            for e in range(-x + 1, x):
-                                for f in range(-y + 1, y):
-                                    for g in range(-x + 1, x):
-                                        for h in range(-y + 1, y):
-                                            for goal in goal_table:
-                                                state_space.append(tuple([a, b, c, d, e, f, g, h] + list(goal)))
-
-    elif coords_type == "absolute":
-
-        if num_agents == 1:
-            for a in range(x):
-                for b in range(y):
-                        for goal in goal_table:
-                            state_space.append(tuple([a, b] + list(goal)))
-
-        elif num_agents == 2:
-            for a in range(x):
-                for b in range(y):
-                    for c in range(x):
-                        for d in range(y):
-                                for goal in goal_table:
-                                    state_space.append(tuple([a, b, c, d] + list(goal)))
-
-        elif num_agents == 3:
-            for a in range(x):
-                for b in range(y):
-                    for c in range(x):
-                        for d in range(y):
-                            for e in range(x):
-                                for f in range(y):
+    elif num_agents == 4:
+        for a in x_range:
+            for b in y_range:
+                for c in x_range:
+                    for d in y_range:
+                        for e in x_range:
+                            for f in y_range:
+                                for g in x_range:
+                                    for h in y_range:
                                         for goal in goal_table:
-                                            state_space.append(tuple([a, b, c, d, e, f] + list(goal)))
-
-        elif num_agents == 4:
-            for a in range(x):
-                for b in range(y):
-                    for c in range(x):
-                        for d in range(y):
-                            for e in range(x):
-                                for f in range(y):
-                                    for g in range(x):
-                                        for h in range(y):
-                                            for goal in goal_table:
-                                                state_space.append(tuple([a, b, c, d, e, f, g, h] + list(goal)))
+                                            state_space.append(tuple([a, b, c, d, e, f, g, h] + list(goal)))
     return state_space

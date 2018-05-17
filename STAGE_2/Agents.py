@@ -6,9 +6,8 @@ from random import *
 import copy
 import pickle
 import os
-# import tensorflow as tf
 import datetime
-import time
+import tensorflow as tf
 
 
 # For time stamping directories when agents Q-functions are saved
@@ -48,6 +47,13 @@ class Q_Table:
         with open('Saved_Files/' + 'agent' + int2let(self.agent_id+1) + '_saved' + '.pkl', 'rb') as f:
             self.Q = pickle.load(f)
 
+    # Save Q-table to file
+    def save(self):
+        stamp = timeStamped("")
+        os.makedirs('Saved_Files/' + stamp)
+        with open('Saved_Files/' + stamp + '/agent' + int2let(self.agent_id+1) + '_saved' + '.pkl', 'wb') as f:
+            pickle.dump(self.Q, f, pickle.HIGHEST_PROTOCOL)
+
     # Create a new Q-table, with all Q-values initialised to 0.1
     def new(self):
         self.Q = {}
@@ -56,13 +62,6 @@ class Q_Table:
             for action in self.actions:
                 temp[action] = 0.1
             self.Q[state] = temp  # Initialise Q table
-
-    # Save Q-table to file
-    def save(self):
-        stamp = timeStamped("")
-        os.makedirs('Saved_Files/' + stamp)
-        with open('Saved_Files/' + stamp + '/agent' + int2let(self.agent_id+1) + '_saved' + '.pkl', 'wb') as f:
-            pickle.dump(self.Q, f, pickle.HIGHEST_PROTOCOL)
 
     # Decide on the best action to take (with the exception of a random action now and again)
     def act(self):
@@ -79,7 +78,7 @@ class Q_Table:
             self.action = max_act
 
     # Learn from the new state and reward pair as updated by the environment
-    def learn(self, time, restart):
+    def learn(self, t, restart):
 
         # Use shorthand notation for readability
         s = self.state
@@ -97,7 +96,7 @@ class Q_Table:
         self.Q[s][a] = Q[s][a] + lr * (r + y * max_val - Q[s][a])
 
         # Update the learning rate
-        self.alpha = pow(time, -0.1)
+        self.alpha = pow(t, -0.1)
 
         # Decay epsilon value at the end of each episode
         if restart is True and self.epsilon > 0.01:
@@ -116,23 +115,70 @@ class Q_Table:
 
 class DQN:
 
-    def __init__(self, agent_id, discount, epsilon_decay, states, actions, q):
+    def __init__(self, agent_id, discount, epsilon_decay, input_size, actions, q):
 
         self.agent_id = agent_id  # Numerical ID for each agent
         self.discount = discount  # Discount factor
+        self.epsilon = 1  # Initial value of agent's epsilon
         self.epsilon_decay = epsilon_decay  # How much epsilon decays per step
+        self.input_size = input_size  # Input the size of the environment's state space
         self.actions = actions  # Input the environment's action space
-        self.states = states  # Input the size of the environment's state space
+        self.Q = q
+        self.action = "none"
 
+        tf.reset_default_graph()
+        self.num_actions = len(self.actions)
+
+        # The initial DQN can be either loaded from file or created from scratch
+        if self.Q == "load":
+            DQN.load(self)
+        elif self.Q == "new":
+            DQN.new(self)
+
+    # Load DQN from file
+    def load(self):
+        with open('Saved_Files/' + 'agent' + int2let(self.agent_id + 1) + '_saved' + '.pkl', 'rb') as f:
+            self.Q = pickle.load(f)
+
+    # Save Q-table to file
+    def save(self):
+        stamp = timeStamped("")
+        os.makedirs('Saved_Files/' + stamp)
+        with open('Saved_Files/' + stamp + '/agent' + int2let(self.agent_id + 1) + '_saved' + '.pkl',
+                  'wb') as f:
+            pickle.dump(self.Q, f, pickle.HIGHEST_PROTOCOL)
+
+    # Create a new DQN
+    def new(self):
         # These lines establish the feed-forward part of the network used to choose actions
-        num_actions = len(self.actions)
-        inputs1 = tf.placeholder(shape=[1, self.num_states], dtype=tf.float32)
-        W = tf.Variable(tf.random_uniform([self.num_states, num_actions], 0, 0.01))
+        inputs1 = tf.placeholder(shape=[1, self.input_size], dtype=tf.float32)
+        W = tf.Variable(tf.random_uniform([self.input_size, self.num_actions], 0, 0.01))
         Qout = tf.matmul(inputs1, W)
         predict = tf.argmax(Qout, 1)
 
         # Below we obtain the loss by taking the sum of squares difference between the target and prediction Q-values.
-        nextQ = tf.placeholder(shape=[1, num_actions], dtype=tf.float32)
+        nextQ = tf.placeholder(shape=[1, self.num_actions], dtype=tf.float32)
         loss = tf.reduce_sum(tf.square(nextQ - Qout))
         trainer = tf.train.GradientDescentOptimizer(learning_rate=0.1)
         updateModel = trainer.minimize(loss)
+
+    # Decide on the best action to take (with the exception of a random action now and again)
+    def act(self):
+
+        # Evaluate the best action
+
+        # Do a random action
+        if random() < self.epsilon:
+            self.action = self.actions[randint(0, 4)]
+
+        # Do the best action
+        else:
+            self.action = max_act
+
+    # Learn from the new state and reward pair as updated by the environment
+    def learn(self, t, restart):
+
+        # Decay epsilon value at the end of each episode
+        if restart is True and self.epsilon > 0.01:
+            self.epsilon *= self.epsilon_decay
+

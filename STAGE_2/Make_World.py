@@ -45,8 +45,9 @@ class World:
 
         # Multi-agent variables
         self.num_agents = num_agents
-        self.states = make_states(self.num_agents, self.coords_type, len(self.goals), self.width, self.height)  # Create the entire state space
-        self.num_states = len(self.states)
+        self.state_size = 2 * self.num_agents + len(self.goals)
+        if self.coords_type == "relative":
+            self.state_size += 2 * len(self.goals)
         self.agent_type = agent_type
         self.agent_list = World.make_agents(self, self.agent_type)  # To create instances of agents
         self.collisions = 0  # To count how many collisions have occurred in each episode
@@ -281,11 +282,19 @@ class World:
             Q = "new"
 
         if agent_type is "Q_Table":
+
+            # Create the entire state space to input to our Q_Table agents
+            state_space = make_states(self.num_agents,
+                                      self.coords_type,
+                                      len(self.goals),
+                                      self.width,
+                                      self.height)
+
             for i in range(self.num_agents):
                 agent = Q_Table(agent_id=i,
                                 discount=0.9,
                                 epsilon_decay=0.5,
-                                states=self.states,
+                                states=state_space,
                                 actions=self.actions,
                                 q=Q)
                 agent_list.append(agent)
@@ -295,7 +304,7 @@ class World:
                 agent = DQN(agent_id=i,
                             discount=0.9,
                             epsilon_decay=0.5,
-                            states=self.states,
+                            input_size=self.state_size,
                             actions=self.actions,
                             q=Q)
                 agent_list.append(agent)

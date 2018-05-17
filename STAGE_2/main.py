@@ -4,7 +4,7 @@ __author__ = 'Dylan Klein'
 
 from Make_World import World
 import numpy as np
-import threading
+from threading import Thread
 import time
 
 
@@ -17,7 +17,7 @@ import time
     - save="no": does not save agents' neural networks to file, save="yes": saves neural networks to file
 '''
 
-env = World(map_type="plus", num_agents=3, agent_type="Q_Table", coords_type="absolute", load="no", save="no")
+env = World(map_type="plus", num_agents=2, agent_type="Q_Table", coords_type="absolute", load="no", save="no")
 
 
 # Save agents' Q-tables or Neural Networks to file
@@ -59,7 +59,7 @@ def start_training():
         save_agents()
 
     finally:
-        tk = threading.Thread(target=start_testing)
+        tk = Thread(target=start_testing)
         tk.daemon = True
         tk.start()
         env.start_game()
