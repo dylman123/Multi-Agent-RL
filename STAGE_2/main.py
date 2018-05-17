@@ -6,6 +6,7 @@ from Make_World import World
 import numpy as np
 from threading import Thread
 import time
+import tensorflow as tf
 
 
 '''
@@ -17,7 +18,7 @@ import time
     - save="no": does not save agents' neural networks to file, save="yes": saves neural networks to file
 '''
 
-env = World(map_type="plus", num_agents=2, agent_type="Q_Table", coords_type="absolute", load="no", save="no")
+env = World(map_type="plus", num_agents=2, agent_type="QTable", coords_type="absolute", load="no", save="no")
 
 
 # Save agents' Q-tables or Neural Networks to file
@@ -40,19 +41,23 @@ def start_training():
     try:
         # Initialise loop variables
         cumulative_rewards = [0] * env.num_agents
+        init = tf.global_variables_initializer()
 
-        while True:
-            ep = env.episode_count
+        with tf.Session() as sess:
+            sess.run(init)
 
-            # Take a step in the environment
-            observation, rewards, done, info = env.step()
+            while True:
+                ep = env.episode_count
 
-            # Calculate the agents' cumulative rewards
-            cumulative_rewards = np.array(cumulative_rewards) + np.array(rewards)
+                # Take a step in the environment
+                observation, rewards, done, info = env.step()
 
-            # Print the agents' average reward per episode
-            if done is True and ep % 100 is 0:
-                print(ep, cumulative_rewards / ep)
+                # Calculate the agents' cumulative rewards
+                cumulative_rewards = np.array(cumulative_rewards) + np.array(rewards)
+
+                # Print the agents' average reward per episode
+                if done is True and ep % 100 is 0:
+                    print(ep, cumulative_rewards / ep)
 
     # A keyboard interrupt will exit training mode
     except KeyboardInterrupt:

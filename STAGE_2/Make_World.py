@@ -281,7 +281,7 @@ class World:
         else:
             Q = "new"
 
-        if agent_type is "Q_Table":
+        if agent_type is "QTable":
 
             # Create the entire state space to input to our Q_Table agents
             state_space = make_states(self.num_agents,
@@ -291,12 +291,12 @@ class World:
                                       self.height)
 
             for i in range(self.num_agents):
-                agent = Q_Table(agent_id=i,
-                                discount=0.9,
-                                epsilon_decay=0.5,
-                                states=state_space,
-                                actions=self.actions,
-                                q=Q)
+                agent = QTable(agent_id=i,
+                               discount=0.9,
+                               epsilon_decay=0.5,
+                               states=state_space,
+                               actions=self.actions,
+                               q=Q)
                 agent_list.append(agent)
 
         elif agent_type is "DQN":

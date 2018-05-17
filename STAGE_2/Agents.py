@@ -3,19 +3,19 @@ __author__ = 'Dylan Klein'
 
 from Naming_Convention import integer_to_letter as int2let
 from random import *
-import copy
 import pickle
 import os
 import datetime
 import tensorflow as tf
+import numpy as np
 
 
 # For time stamping directories when agents Q-functions are saved
-def timeStamped(fname, fmt='%Y-%m-%d-%H-%M-%S_{fname}'):
+def timestamped(fname, fmt='%Y-%m-%d-%H-%M-%S_{fname}'):
     return datetime.datetime.now().strftime(fmt).format(fname=fname)
 
 
-class Q_Table:
+class QTable:
 
     def __init__(self, agent_id, discount, epsilon_decay, states, actions, q):
 
@@ -24,7 +24,7 @@ class Q_Table:
         self.alpha = 0.1  # The agent's learning rate
         self.epsilon = 1  # Initial value of agent's epsilon
         self.epsilon_decay = epsilon_decay  # How much epsilon decays per step
-        self.Q = copy.deepcopy(q)  # The Q-table of the agent
+        self.Q = q  # The Q-table of the agent
         self.actions = actions  # Input the environment's action space
         self.action = "none"  # The agent's chosen action for a single step
         self.goal = (0, 0, 0, 0)  # An agent's goal in one-hot coding
@@ -38,9 +38,9 @@ class Q_Table:
 
         # The initial Q-table can be either loaded from file or created from scratch
         if self.Q == "load":
-            Q_Table.load(self)
+            QTable.load(self)
         elif self.Q == "new":
-            Q_Table.new(self)
+            QTable.new(self)
 
     # Load Q-table from file
     def load(self):
@@ -49,7 +49,7 @@ class Q_Table:
 
     # Save Q-table to file
     def save(self):
-        stamp = timeStamped("")
+        stamp = timestamped("")
         os.makedirs('Saved_Files/' + stamp)
         with open('Saved_Files/' + stamp + '/agent' + int2let(self.agent_id+1) + '_saved' + '.pkl', 'wb') as f:
             pickle.dump(self.Q, f, pickle.HIGHEST_PROTOCOL)
@@ -67,7 +67,7 @@ class Q_Table:
     def act(self):
 
         # Evaluate the best action
-        max_act, max_val = Q_Table.max_Q(self, self.state)
+        max_act, max_val = QTable.max_Q(self, self.state)
 
         # Do a random action
         if random() < self.epsilon:
@@ -90,7 +90,7 @@ class Q_Table:
         Q = self.Q
 
         # Find the maximum value for the new state
-        max_act, max_val = Q_Table.max_Q(self, s2)
+        max_act, max_val = QTable.max_Q(self, s2)
 
         # Update Q-Table using the Bellman Equation
         self.Q[s][a] = Q[s][a] + lr * (r + y * max_val - Q[s][a])
@@ -119,21 +119,41 @@ class DQN:
 
         self.agent_id = agent_id  # Numerical ID for each agent
         self.discount = discount  # Discount factor
+        self.alpha = 0.1  # The agent's learning rate
         self.epsilon = 1  # Initial value of agent's epsilon
         self.epsilon_decay = epsilon_decay  # How much epsilon decays per step
         self.input_size = input_size  # Input the size of the environment's state space
+        self.Q = q  # The Q-table of the agent
         self.actions = actions  # Input the environment's action space
-        self.Q = q
-        self.action = "none"
+        self.action = "none"  # The agent's chosen action for a single step
+        self.goal = (0, 0, 0, 0)  # An agent's goal in one-hot coding
+        self.intent = "none"  # An agent's intended goal in words
+        self.position = (0, 0)  # An agent's coordinates
+        self.reward = 0  # An agent's reward per step
+        self.state = []  # An agent's previous state
+        self.state2 = []  # An agent's new state
+        self.arrow = {}  # Object to store the agent's intent arrows
+        self.num_actions = len(self.actions)  # Total number of actions in action space
 
         tf.reset_default_graph()
-        self.num_actions = len(self.actions)
 
         # The initial DQN can be either loaded from file or created from scratch
         if self.Q == "load":
             DQN.load(self)
+
         elif self.Q == "new":
-            DQN.new(self)
+
+            # These lines establish the feed-forward part of the network used to choose actions
+            self.inputs1 = tf.placeholder(shape=[1, self.input_size], dtype=tf.float32)
+            self.W = tf.Variable(tf.random_uniform([self.input_size, self.num_actions], 0, 0.01))
+            self.Qout = tf.matmul(self.inputs1, self.W)
+            self.predict = tf.argmax(self.Qout, 1)
+
+            # Below we obtain the loss by taking the sum of squares difference between the target and prediction Q-values
+            self.nextQ = tf.placeholder(shape=[1, self.num_actions], dtype=tf.float32)
+            self.loss = tf.reduce_sum(tf.square(self.nextQ - self.Qout))
+            self.trainer = tf.train.GradientDescentOptimizer(learning_rate=0.1)
+            self.updateModel = self.trainer.minimize(self.loss)
 
     # Load DQN from file
     def load(self):
@@ -142,30 +162,18 @@ class DQN:
 
     # Save Q-table to file
     def save(self):
-        stamp = timeStamped("")
+        stamp = timestamped("")
         os.makedirs('Saved_Files/' + stamp)
         with open('Saved_Files/' + stamp + '/agent' + int2let(self.agent_id + 1) + '_saved' + '.pkl',
                   'wb') as f:
             pickle.dump(self.Q, f, pickle.HIGHEST_PROTOCOL)
 
-    # Create a new DQN
-    def new(self):
-        # These lines establish the feed-forward part of the network used to choose actions
-        inputs1 = tf.placeholder(shape=[1, self.input_size], dtype=tf.float32)
-        W = tf.Variable(tf.random_uniform([self.input_size, self.num_actions], 0, 0.01))
-        Qout = tf.matmul(inputs1, W)
-        predict = tf.argmax(Qout, 1)
-
-        # Below we obtain the loss by taking the sum of squares difference between the target and prediction Q-values.
-        nextQ = tf.placeholder(shape=[1, self.num_actions], dtype=tf.float32)
-        loss = tf.reduce_sum(tf.square(nextQ - Qout))
-        trainer = tf.train.GradientDescentOptimizer(learning_rate=0.1)
-        updateModel = trainer.minimize(loss)
-
     # Decide on the best action to take (with the exception of a random action now and again)
     def act(self):
 
         # Evaluate the best action
+        a, allQ = sess.run([self.predict, self.Qout],
+                           feed_dict={self.inputs1: np.identity(self.input_size)[s:s + 1]})
 
         # Do a random action
         if random() < self.epsilon:
